@@ -1,57 +1,40 @@
 version: 2.1
 
-parameters:
-  environment:
-    type: string
-    default: staging
-    enum:
-      - staging
-      - production
-
 orbs:
-  maven: circleci/maven@2.0.0 # Maven orb for building and testing Java projects
+  slack: circleci/slack@5.1.1
 
 jobs:
   build:
-    parameters:
-      working-directory:
-        type: string
-        default: "code/nexus-lab/circleci-101"
     docker:
-      - image: cimg/openjdk:11.0 # Java build environment
+      - image: cimg/base:current
     steps:
       - checkout
       - run:
-          name: Build the Project
-          command: cd << parameters.working-directory >> && mvn clean package spring-boot:repackage
-      - run: echo Built $CIRCLE_BRANCH successfully
-
-  deploy:
-    parameters:
-      environment:
-        type: string
-    docker:
-      - image: cimg/openjdk:11.0
-    steps:
-      - when:
-          condition:
-            equal: [ production, << pipeline.parameters.environment >> ]
-          steps:
-            - run:
-                name: Mock Deployment
-                command: echo "Deployment on << parameters.environment >> environment complete."
+          name: Mock Build Step
+          command: |
+            echo "Starting the mock build..."
+            sleep 10
+            echo "Build complete."
+      - slack/notify:
+          event: pass
+          template: basic_success_1
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Mock Build Completed Successfully cx-andreca *"
+                  }
+                }
+              ]
+            }
 
 workflows:
   version: 2
-  build_and_deploy:
+  simple-slack-notifier:
     jobs:
-      - build
-      - deploy:
-          environment: << pipeline.parameters.environment >>
-          # filters:
-          #   branch:
-          #     only:
-          #       - workshop/circleci
-          requires:
-            - build
-
+      - build:
+          context:
+            - devops-shift-slack
