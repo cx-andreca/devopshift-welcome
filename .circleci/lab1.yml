@@ -29,17 +29,17 @@ jobs:
   deploy:
     parameters:
       environment:
-        type: string
+        type: enum
+        default: staging
+        enum:
+          - staging
+          - production
     docker:
       - image: cimg/openjdk:11.0
     steps:
-      - when:
-          condition:
-            equal: [ production, << pipeline.parameters.environment >> ]
-          steps:
-            - run:
-                name: Mock Deployment
-                command: echo "Deployment on << parameters.environment >> environment complete."
+      - run:
+          name: Mock Deployment
+          command: echo "Deployment on << parameters.environment >> environment complete."
 
 workflows:
   version: 2
@@ -48,10 +48,13 @@ workflows:
       - build
       - deploy:
           environment: << pipeline.parameters.environment >>
-          # filters:
-          #   branch:
-          #     only:
-          #       - workshop/circleci
+          when:
+            condition:
+              equal: [ production, << pipeline.parameters.environment >> ]
+          filters:
+            branch:
+              only:
+                - workshop/circleci
           requires:
             - build
 
